@@ -7,7 +7,6 @@ package mapreduce;
 
 service Reducer {
     rpc Reduce(ReduceTask) returns (ReduceResponse) {}
-    rpc ReduceChangePath(ReduceChangePathMes) returns (google.protobuf.Empty) {}
 }
 
 message ReduceTask {
@@ -17,9 +16,4 @@ message ReduceTask {
 
 message ReduceResponse {
     string output_path = 1;
-}
-
-message ReduceChangePathMes {
-    int32 mapper_id = 1;
-    string new_partition_path = 2;
 }
