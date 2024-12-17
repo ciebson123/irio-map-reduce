@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+// import "google/protobuf/empty.proto";
+
+package mapreduce;
+
+
+service Mapper {
+
+    rpc Map(MapTask) returns (MapResponse) {}
+
+}
+
+message MapTask {
+    string file_path = 1;
+    int32 num_partitions = 2;
+}
+
+message MapResponse {
+    repeated string partition_paths = 1;
+}
