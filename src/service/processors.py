@@ -1,3 +1,4 @@
+from collections import Counter
 from pathlib import Path
 from typing import List
 
@@ -15,7 +16,7 @@ def process_map_task(input_path: Path, num_partitions: int, output_dir: Path) ->
 
     Each of the num_partitions output files will have n lines of form
 
-    "word 1"
+    "word <count of occurences of word>"
 
     where i-th file will contain words such that xxh32_intdigest(word) % num_partitions == i
     and n is the number of words
@@ -35,13 +36,17 @@ def process_map_task(input_path: Path, num_partitions: int, output_dir: Path) ->
     if num_partitions <= 0:
         raise ValueError("num_partitions must be greater than zero")
 
+    counter = Counter()
+
     with open(input_path, "r") as input_file:
         for line in input_file:
             for word in line.strip().split():
-                partition_num = _get_partition_idx(word, num_partitions)
-                with output_dir.joinpath(str(partition_num)).open("a") as output_file:
-                    new_line = f"{word} 1"
-                    output_file.write(f"{new_line}\n")
+                counter[word] += 1
+
+    for word, count in counter.items():
+        partition_num = _get_partition_idx(word, num_partitions)
+        with output_dir.joinpath(str(partition_num)).open("a") as output_file:
+            output_file.write(f"{word} {count}\n")
 
     return [output_dir.joinpath(str(partition_num)) for partition_num in range(num_partitions)]
 
