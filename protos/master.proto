@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package mapreduce;
+
+
+service Master {
+    rpc RegisterService(RegisterServiceMes) returns (google.protobuf.Empty) {};
+}
+
+message RegisterServiceMes {
+    string service_address = 1;
+    int32 service_port = 2;
+}

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package mapreduce;
+
+
+service Reducer {
+    rpc Reduce(ReduceTask) returns (ReduceResponse) {}
+}
+
+message ReduceTask {
+    repeated string partition_paths = 1;
+    string output_path = 2;
+}
+
+message ReduceResponse {
+    string output_path = 1;
+}
