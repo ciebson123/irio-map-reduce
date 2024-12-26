@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-// import "google/protobuf/empty.proto";
-
 package mapreduce;
 
 
@@ -14,6 +12,7 @@ service Mapper {
 message MapTask {
     string file_path = 1;
     int32 num_partitions = 2;
+    string output_dir = 3;
 }
 
 message MapResponse {
