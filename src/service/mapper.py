@@ -49,8 +49,3 @@ def process_map_task(input_path: Path, num_partitions: int, output_dir: Path) ->
             output_file.write(f"{word} {count}\n")
 
     return [output_dir.joinpath(str(partition_num)) for partition_num in range(num_partitions)]
-
-
-def process_reduce_task():
-    # Placeholder
-    pass
