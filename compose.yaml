@@ -1,22 +1,15 @@
 services:
-  mapper:
+  worker:
     build:
       context: . 
-      dockerfile: docker/mapper/Dockerfile
-    container_name: mapper
+      dockerfile: docker/worker/Dockerfile
+    container_name: worker
     ports:
       - "8080:8000"
-  reducer:
-    build:
-      context: . 
-      dockerfile: docker/reducer/Dockerfile
-    container_name: reducer
-    ports:
-      - "8081:8000"
   master:
     build:
       context: . 
       dockerfile: docker/master/Dockerfile
     container_name: master
     ports:
-      - "8082:8000"
+      - "8081:8000"
