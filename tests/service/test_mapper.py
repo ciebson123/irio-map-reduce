@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from xxhash import xxh32_intdigest
 
-from src.service.processors import process_map_task
+from src.service.mapper import process_map_task
 
 SIMPLE_WORDS = ["foo", "poo", "kuku", "loo", "loo", "monty", "python", "foo", "foo", "aha", "bizz", "bizz"]
 
