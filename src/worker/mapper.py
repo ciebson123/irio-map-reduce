@@ -2,7 +2,11 @@ from collections import Counter
 from pathlib import Path
 from typing import List
 
+import grpc
 from xxhash import xxh32_intdigest
+
+from src.generated_files.mapper_pb2 import MapResponse
+from src.generated_files.mapper_pb2_grpc import MapperServicer
 
 
 def _get_partition_idx(word: str, num_partitions: int) -> int:
@@ -49,3 +53,17 @@ def process_map_task(input_path: Path, num_partitions: int, output_dir: Path) ->
             output_file.write(f"{word} {count}\n")
 
     return [output_dir.joinpath(str(partition_num)) for partition_num in range(num_partitions)]
+
+
+class Mapper(MapperServicer):
+    def Map(self, map_task, context):
+        try:
+            partition_paths = process_map_task(
+                Path(map_task.file_path),
+                map_task.num_partitions,
+                Path(map_task.output_dir),
+            )
+            res = MapResponse(partition_paths=[p.absolute().as_posix() for p in partition_paths])
+            return res
+        except ValueError as e:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(e))
