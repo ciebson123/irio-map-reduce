@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: master-app
+  labels:
+    app: master-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: master-app
+  template:
+    metadata:
+      labels:
+        app: master-app
+    spec:
+      containers:
+      - name: master-container
+        image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-master:latest
+        ports:
+        - containerPort: 80
