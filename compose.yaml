@@ -1,0 +1,15 @@
+services:
+  worker:
+    build:
+      context: . 
+      dockerfile: docker/worker/Dockerfile
+    container_name: worker
+    ports:
+      - "8080:8000"
+  master:
+    build:
+      context: . 
+      dockerfile: docker/master/Dockerfile
+    container_name: master
+    ports:
+      - "8081:8000"
