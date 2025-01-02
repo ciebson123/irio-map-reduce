@@ -40,8 +40,17 @@ Run `setup_app.sh`. This should
 4. Configure docker with google auth and push the images to registry.
 5. Deploy `master` and `worker` to the cluster.
 
+### Updating the image
+
+If you already set up the cluster and registry, you can run `update_image.sh` to build new docker image and roll it out to the cluster.
+
 ### Deletion
 
 To delete your cluster and registry, run `delete_all.sh`. You will have to confirm both deletions.
+
+### Troubleshooting
+
+If the images don't want to build or don't run on GCE, try using gcloud console. 
+There might be an issue with building docker on ARM architecture.
 
 
