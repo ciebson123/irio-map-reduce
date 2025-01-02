@@ -162,4 +162,4 @@ cython_debug/
 .idea/
 
 # protobuf
-protos_out/
+src/generated_files/*_pb2*

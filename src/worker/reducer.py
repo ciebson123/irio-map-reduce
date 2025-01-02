@@ -2,6 +2,9 @@ from collections import defaultdict
 from pathlib import Path
 from typing import List, DefaultDict
 
+from src.generated_files.reducer_pb2 import ReduceResponse
+from src.generated_files.reducer_pb2_grpc import ReducerServicer
+
 
 def _update_kval_from_file(kvals: DefaultDict[str, List[int]], path: Path) -> None:
     with open(path, "r") as input_file:
@@ -42,3 +45,10 @@ def process_reduce_task(intermediate_paths: List[Path], output_path: Path) -> No
     with output_path.open("w") as output_file:
         for key, value in result.items():
             output_file.write(f"{key} {value}\n")
+
+
+class Reducer(ReducerServicer):
+    def Reduce(self, reduce_task, context):
+        process_reduce_task([Path(p) for p in reduce_task.partition_paths], Path(reduce_task.output_path))
+
+        return ReduceResponse()
