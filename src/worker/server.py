@@ -25,5 +25,5 @@ if __name__ == "__main__":
 
     serv.add_insecure_port("[::]:" + str(port))
     serv.start()
-    print("Server started, listening on " + str(port))
+    logging.info("Server started, listening on " + str(port))
     serv.wait_for_termination()
