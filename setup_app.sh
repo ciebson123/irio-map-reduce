@@ -38,6 +38,9 @@ docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/$IMAGE2_NAME:$IM
 
 # Deploy the images to the cluster
 
+kubectl create -f k8s-deployment/storage/filestore-storageclass.yaml
+kubectl create -f k8s-deployment/storage/pvc.yaml
+
 envsubst <k8s-deployment/master-deployment.yaml | kubectl apply -f -
 envsubst <k8s-deployment/worker-deployment.yaml | kubectl apply -f -
 

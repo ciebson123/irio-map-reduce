@@ -19,3 +19,10 @@ spec:
         image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-master:latest
         ports:
         - containerPort: 80
+        volumeMounts:
+        - mountPath: /mapreduce
+          name: fileserver
+      volumes:
+      - name: fileserver
+        persistentVolumeClaim:
+          claimName: fileserver

@@ -31,6 +31,8 @@ Run `sudo usermod -a -G docker ${USER}` and restart your machine
 
 Create the .env file that exports the id of your project as `PROJECT_ID`
 
+Enable the filestore API in gcloud.
+
 ### Deployment
 
 Run `setup_app.sh`. This should 
