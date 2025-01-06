@@ -1,3 +1,4 @@
+import logging
 import os
 from asyncio import Lock, Queue
 from pathlib import Path
@@ -32,6 +33,7 @@ class MasterState:
         self.idle_reduce_tasks: Queue[ReduceTask] = Queue()  # output path and idx
 
     async def initialize_computation(self, input_dir: Path, num_partitions: int):
+        logging.info("Master initializing computation for input dir: %s, num partitions: %d", input_dir, num_partitions)
         self.reduce_tasks_num = num_partitions
 
         input_files = [input_dir / file for file in os.listdir(input_dir) if not file.startswith(".")]
@@ -51,6 +53,7 @@ class MasterState:
                     output_dir=out_dir.absolute().as_posix(),
                 )
             )
+        logging.info("Master finished initialization for input dir: %s, num partitions: %d", input_dir, num_partitions)
 
     async def _add_completed_map_task(self, task: MapTask, response: MapResponse) -> bool:
         ret = False
@@ -62,6 +65,7 @@ class MasterState:
             ret = True
         lock.release()
 
+        logging.info("Map task %s completed", task.output_dir)
         return ret
 
     async def _add_completed_reduce_task(self, task: ReduceTask) -> bool:
@@ -73,6 +77,7 @@ class MasterState:
             ret = True
         lock.release()
 
+        logging.info("Reduce task %s completed", task.output_path)
         return ret
 
     async def _remove_worker(self, worker: str):
@@ -92,10 +97,19 @@ class MasterState:
             idle_task = await self.idle_map_tasks.get()
             next_idle_worker = await self.idle_workers.get()
 
+            logging.info("Sending map task %s to %s", idle_task.file_path, next_idle_worker)
+
             try:
                 async with grpc.aio.insecure_channel(next_idle_worker) as channel:
                     map_response = await MapperStub(channel).Map(idle_task)
             except grpc.RpcError as e:
+                logging.warning(
+                    "Error when sending map task %s to %s.\nError:%s",
+                    idle_task.output_dir,
+                    next_idle_worker,
+                    e,
+                )
+
                 await self._remove_worker(next_idle_worker)
                 await self.idle_map_tasks.put(idle_task)
             else:
@@ -108,10 +122,19 @@ class MasterState:
             idle_task = await self.idle_reduce_tasks.get()
             next_idle_worker = await self.idle_workers.get()
 
+            logging.info("Sending reduce task %s to %s", idle_task.output_path, next_idle_worker)
+
             try:
                 async with grpc.aio.insecure_channel(next_idle_worker) as channel:
                     await ReducerStub(channel).Reduce(idle_task)
             except grpc.RpcError as e:
+                logging.warning(
+                    "Error when sending reduce task %s to %s.\nError:%s",
+                    idle_task.output_path,
+                    next_idle_worker,
+                    e,
+                )
+
                 await self._remove_worker(next_idle_worker)
                 await self.idle_reduce_tasks.put(idle_task)
             else:
@@ -143,8 +166,11 @@ class MasterState:
             await self.idle_reduce_tasks.put(reduce_task)
 
     async def mapreduce(self):
+        logging.info("Master starting map phase")
         await self._consume_map_tasks()
+        logging.info("Master creating reduce tasks")
         await self._create_reduce_tasks()
+        logging.info("Master starting reduce phase")
         await self._consume_reduce_tasks()
 
 
@@ -153,6 +179,7 @@ class Master(MasterServicer):
         self.state = MasterState(shared_dir)
 
     async def RegisterService(self, request: RegisterServiceMes, context: grpc.aio.ServicerContext):
+        logging.info("Worker %s : %d registering with master", request.service_address, request.service_port)
         full_worker_address = f"{request.service_address}:{request.service_port}"
 
         await self.state.add_worker(full_worker_address)
@@ -160,6 +187,20 @@ class Master(MasterServicer):
         return Empty()
 
     async def MapReduce(self, request: MapReduceRequest, context: grpc.aio.ServicerContext):
+        logging.info(
+            "Master received MapReduce request.\nInput dir: %s, num_partitions: %d",
+            request.input_dir,
+            request.num_partitions,
+        )
+
         await self.state.initialize_computation(Path(request.input_dir), request.num_partitions)
         await self.state.mapreduce()
+
+        logging.info(
+            "Master completed MapReduce request.\nInput dir: %s, num_partitions: %d\nResults are in %s. Sending response",
+            request.input_dir,
+            request.num_partitions,
+            self.state.reduce_out_dir
+        )
+
         return MapReduceResponse(output_dir=self.state.reduce_out_dir.absolute().as_posix())
