@@ -97,4 +97,5 @@ def test_grpc_mapper_servicer_handles_invalid_num_partitions(mapper_client: Mapp
 
     with pytest.raises(grpc.RpcError) as grpc_error:
         mapper_client.Map(map_task)
-        assert grpc_error.type == grpc.StatusCode.INVALID_ARGUMENT
+
+    assert grpc_error.value.code() == grpc.StatusCode.INVALID_ARGUMENT
