@@ -7,6 +7,12 @@ IMAGE1_VERSION=latest
 IMAGE2_VERSION=latest
 source .env
 
+kubectl delete deployment master-app
+kubectl delete deployment worker-app
+
+# delete the pvc to delete filestore
+kubectl delete pvc fileserver
+
 # Delete the repository
 
 gcloud artifacts repositories delete $REPOSITORY_NAME --location=$REGION --project=$PROJECT_ID
