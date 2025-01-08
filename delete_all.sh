@@ -1,12 +1,11 @@
+#!/bin/bash
 CLUSTER_NAME=map-reduce-cluster
 REGION=us-central1
 REPOSITORY_NAME=map-reduce-repo
-IMAGE1_NAME=irio-map-reduce-master
-IMAGE2_NAME=irio-map-reduce-worker
-IMAGE1_VERSION=latest
-IMAGE2_VERSION=latest
-source .env
 
+source ./.env
+
+kubectl delete service master-service
 kubectl delete deployment master-app
 kubectl delete deployment worker-app
 

@@ -16,13 +16,28 @@ spec:
     spec:
       containers:
       - name: worker-container
-        image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-worker:latest
+        image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-worker:v$IMAGE_REMOTE_VERSION
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         volumeMounts:
         - mountPath: /mapreduce
           name: fileserver
+        env:
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
       volumes:
       - name: fileserver
         persistentVolumeClaim:
           claimName: fileserver
+        
