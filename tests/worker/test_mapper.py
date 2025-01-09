@@ -10,7 +10,20 @@ from src.generated_files.mapper_pb2 import MapTask
 from src.generated_files.mapper_pb2_grpc import MapperStub
 from src.worker.mapper import process_map_task
 
-SIMPLE_WORDS = ["foo", "poo", "kuku", "loo", "loo", "monty", "python", "foo", "foo", "aha", "bizz", "bizz"]
+SIMPLE_WORDS = [
+    "foo",
+    "poo",
+    "kuku",
+    "loo",
+    "loo",
+    "monty",
+    "python",
+    "foo",
+    "foo",
+    "aha",
+    "bizz",
+    "bizz",
+]
 
 
 @pytest.fixture
@@ -39,8 +52,9 @@ def _get_kv_from_line(line: str):
 
 
 @pytest.mark.parametrize("num_partitions", [-1, 0])
-def test_given_invalid_num_partitions_process_map_task_raises(num_partitions: int, simple_file_path: Path,
-                                                              tmp_path: Path):
+def test_given_invalid_num_partitions_process_map_task_raises(
+    num_partitions: int, simple_file_path: Path, tmp_path: Path
+):
     with pytest.raises(ValueError):
         process_map_task(simple_file_path, num_partitions, tmp_path)
 
@@ -49,27 +63,39 @@ def _get_expected_partition_lines(num_partitions: int, word_list: List[str]):
     simple_words_counts = Counter(word_list)
     expected_partition_lines = [[], []]
     for word, count in simple_words_counts.items():
-        expected_partition_lines[xxh32_intdigest(word) % num_partitions].append(f"{word} {count}\n")
+        expected_partition_lines[xxh32_intdigest(word) % num_partitions].append(
+            f"{word} {count}\n"
+        )
     return expected_partition_lines
 
 
-def test_map_process_produces_correct_output_on_simple_input(simple_file_path: Path, tmp_path: Path):
+def test_map_process_produces_correct_output_on_simple_input(
+    simple_file_path: Path, tmp_path: Path
+):
     num_partitions = 2
-    expected_partition_lines = _get_expected_partition_lines(num_partitions, SIMPLE_WORDS)
+    expected_partition_lines = _get_expected_partition_lines(
+        num_partitions, SIMPLE_WORDS
+    )
 
     output_paths = process_map_task(simple_file_path, num_partitions, tmp_path)
 
     for idx, path in enumerate(output_paths):
         with open(path, "r") as single_partition_file:
-            assert sorted(single_partition_file.readlines()) == sorted(expected_partition_lines[idx])
+            assert sorted(single_partition_file.readlines()) == sorted(
+                expected_partition_lines[idx]
+            )
 
 
-def test_grpc_mapper_servicer_produces_files(mapper_client: MapperStub, tmp_path: Path, simple_file_path: Path):
+def test_grpc_mapper_servicer_produces_files(
+    mapper_client: MapperStub, tmp_path: Path, simple_file_path: Path
+):
     tmp_dir_path = tmp_path / "mapper_servicer_produces_files"
     tmp_dir_path.mkdir()
 
     num_partitions = 2
-    expected_partition_lines = _get_expected_partition_lines(num_partitions, SIMPLE_WORDS)
+    expected_partition_lines = _get_expected_partition_lines(
+        num_partitions, SIMPLE_WORDS
+    )
 
     map_task = MapTask(
         file_path=simple_file_path.absolute().as_posix(),
@@ -81,11 +107,14 @@ def test_grpc_mapper_servicer_produces_files(mapper_client: MapperStub, tmp_path
 
     for idx, path in enumerate(response.partition_paths):
         with open(path, "r") as single_partition_file:
-            assert sorted(single_partition_file.readlines()) == sorted(expected_partition_lines[idx])
+            assert sorted(single_partition_file.readlines()) == sorted(
+                expected_partition_lines[idx]
+            )
 
 
-def test_grpc_mapper_servicer_handles_invalid_num_partitions(mapper_client: MapperStub, tmp_path: Path,
-                                                             simple_file_path: Path):
+def test_grpc_mapper_servicer_handles_invalid_num_partitions(
+    mapper_client: MapperStub, tmp_path: Path, simple_file_path: Path
+):
     tmp_dir_path = tmp_path / "mapper_servicer_handles_invalid_num_partitions"
     tmp_dir_path.mkdir()
 
