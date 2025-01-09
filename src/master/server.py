@@ -19,8 +19,8 @@ def build_master_server(shared_dir: Path) -> grpc.Server:
 
 
 async def serve_prod(
-        shared_dir: Path,
-        port: int = 8000,
+    shared_dir: Path,
+    port: int = 8000,
 ) -> None:
     server = build_master_server(shared_dir)
     server.add_insecure_port("[::]:" + str(port))
@@ -29,9 +29,10 @@ async def serve_prod(
     logging.info("Prod server started, listening on " + str(port))
     await server.wait_for_termination()
 
+
 async def serve_test(
-        shared_dir: Path,
-        return_port_placeholder: Tuple[Event, List],
+    shared_dir: Path,
+    return_port_placeholder: Tuple[Event, List],
 ):
     serv = build_master_server(shared_dir)
 
@@ -47,7 +48,9 @@ async def serve_test(
     await serv.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
+    logger = logging.getLogger()
+    logger.info("Starting master server")
     s_dir = Path(os.environ.get("SHARED_DIR"))
     asyncio.run(serve_prod(s_dir))

@@ -9,7 +9,11 @@ from google.protobuf.empty_pb2 import Empty
 
 from src.generated_files.mapper_pb2 import MapTask, MapResponse
 from src.generated_files.mapper_pb2_grpc import MapperStub
-from src.generated_files.master_pb2 import RegisterServiceMes, MapReduceRequest, MapReduceResponse
+from src.generated_files.master_pb2 import (
+    RegisterServiceMes,
+    MapReduceRequest,
+    MapReduceResponse,
+)
 from src.generated_files.master_pb2_grpc import MasterServicer
 from src.generated_files.reducer_pb2 import ReduceTask
 from src.generated_files.reducer_pb2_grpc import ReducerStub
@@ -25,7 +29,10 @@ class MasterState:
 
         self.worker_addresses: Tuple[set[str], Lock] = set(), Lock()
 
-        self.completed_map_tasks: Tuple[List[Tuple[MapTask, MapResponse]], Lock] = [], Lock()
+        self.completed_map_tasks: Tuple[List[Tuple[MapTask, MapResponse]], Lock] = (
+            [],
+            Lock(),
+        )
         self.completed_reduce_tasks: Tuple[List[ReduceTask], Lock] = [], Lock()
 
         self.idle_workers: Queue[str] = Queue(32)
@@ -33,10 +40,18 @@ class MasterState:
         self.idle_reduce_tasks: Queue[ReduceTask] = Queue()  # output path and idx
 
     async def initialize_computation(self, input_dir: Path, num_partitions: int):
-        logging.info("Master initializing computation for input dir: %s, num partitions: %d", input_dir, num_partitions)
+        logging.info(
+            "Master initializing computation for input dir: %s, num partitions: %d",
+            input_dir,
+            num_partitions,
+        )
         self.reduce_tasks_num = num_partitions
 
-        input_files = [input_dir / file for file in os.listdir(input_dir) if not file.startswith(".")]
+        input_files = [
+            input_dir / file
+            for file in os.listdir(input_dir)
+            if not file.startswith(".")
+        ]
         self.map_tasks_num = len(input_files)
 
         # prepares output dirs for map tasks
@@ -53,9 +68,15 @@ class MasterState:
                     output_dir=out_dir.absolute().as_posix(),
                 )
             )
-        logging.info("Master finished initialization for input dir: %s, num partitions: %d", input_dir, num_partitions)
+        logging.info(
+            "Master finished initialization for input dir: %s, num partitions: %d",
+            input_dir,
+            num_partitions,
+        )
 
-    async def _add_completed_map_task(self, task: MapTask, response: MapResponse) -> bool:
+    async def _add_completed_map_task(
+        self, task: MapTask, response: MapResponse
+    ) -> bool:
         ret = False
 
         compl_list, lock = self.completed_map_tasks
@@ -97,7 +118,9 @@ class MasterState:
             idle_task = await self.idle_map_tasks.get()
             next_idle_worker = await self.idle_workers.get()
 
-            logging.info("Sending map task %s to %s", idle_task.file_path, next_idle_worker)
+            logging.info(
+                "Sending map task %s to %s", idle_task.file_path, next_idle_worker
+            )
 
             try:
                 async with grpc.aio.insecure_channel(next_idle_worker) as channel:
@@ -122,7 +145,9 @@ class MasterState:
             idle_task = await self.idle_reduce_tasks.get()
             next_idle_worker = await self.idle_workers.get()
 
-            logging.info("Sending reduce task %s to %s", idle_task.output_path, next_idle_worker)
+            logging.info(
+                "Sending reduce task %s to %s", idle_task.output_path, next_idle_worker
+            )
 
             try:
                 async with grpc.aio.insecure_channel(next_idle_worker) as channel:
@@ -149,15 +174,18 @@ class MasterState:
         reduce_tasks = [
             ReduceTask(
                 partition_paths=[],
-                output_path=(self.reduce_out_dir / f"reduce_task_{idx}").absolute().as_posix()) for idx in
-            range(self.reduce_tasks_num)
+                output_path=(self.reduce_out_dir / f"reduce_task_{idx}")
+                .absolute()
+                .as_posix(),
+            )
+            for idx in range(self.reduce_tasks_num)
         ]
 
         compl_map_tasks, lock = self.completed_map_tasks
         await lock.acquire()
 
-        for (map_req, map_resp) in compl_map_tasks:
-            for (reduce_idx, partition_path) in enumerate(map_resp.partition_paths):
+        for map_req, map_resp in compl_map_tasks:
+            for reduce_idx, partition_path in enumerate(map_resp.partition_paths):
                 reduce_tasks[reduce_idx].partition_paths.append(partition_path)
 
         lock.release()
@@ -178,29 +206,41 @@ class Master(MasterServicer):
     def __init__(self, shared_dir: Path):
         self.state = MasterState(shared_dir)
 
-    async def RegisterService(self, request: RegisterServiceMes, context: grpc.aio.ServicerContext):
-        logging.info("Worker %s : %d registering with master", request.service_address, request.service_port)
+    async def RegisterService(
+        self, request: RegisterServiceMes, context: grpc.aio.ServicerContext
+    ):
+        logging.info(
+            "Worker %s : %d registering with master",
+            request.service_address,
+            request.service_port,
+        )
         full_worker_address = f"{request.service_address}:{request.service_port}"
-
+        print(f"Registering worker: {full_worker_address}")
         await self.state.add_worker(full_worker_address)
         await self.state.idle_workers.put(full_worker_address)
         return Empty()
 
-    async def MapReduce(self, request: MapReduceRequest, context: grpc.aio.ServicerContext):
+    async def MapReduce(
+        self, request: MapReduceRequest, context: grpc.aio.ServicerContext
+    ):
         logging.info(
             "Master received MapReduce request.\nInput dir: %s, num_partitions: %d",
             request.input_dir,
             request.num_partitions,
         )
 
-        await self.state.initialize_computation(Path(request.input_dir), request.num_partitions)
+        await self.state.initialize_computation(
+            Path(request.input_dir), request.num_partitions
+        )
         await self.state.mapreduce()
 
         logging.info(
             "Master completed MapReduce request.\nInput dir: %s, num_partitions: %d\nResults are in %s. Sending response",
             request.input_dir,
             request.num_partitions,
-            self.state.reduce_out_dir
+            self.state.reduce_out_dir,
         )
 
-        return MapReduceResponse(output_dir=self.state.reduce_out_dir.absolute().as_posix())
+        return MapReduceResponse(
+            output_dir=self.state.reduce_out_dir.absolute().as_posix()
+        )

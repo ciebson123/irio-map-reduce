@@ -16,13 +16,33 @@ spec:
     spec:
       containers:
       - name: master-container
-        image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-master:latest
+        image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-master:v$IMAGE_REMOTE_VERSION
+        imagePullPolicy: Always
         ports:
-        - containerPort: 80
+        - containerPort: 8000
         volumeMounts:
         - mountPath: /mapreduce
           name: fileserver
+        env:
+        - name: SHARED_DIR
+          value: /mapreduce
       volumes:
       - name: fileserver
         persistentVolumeClaim:
           claimName: fileserver
+      
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: master-service
+spec:
+  selector:
+    app: master-app
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8000
+  type: LoadBalancer
