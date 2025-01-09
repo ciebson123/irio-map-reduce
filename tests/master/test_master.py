@@ -29,15 +29,21 @@ def test_master_returns_when_worker_registers(master_client: MasterStub):
 
 
 def test_master_performs_mapreduce_with_one_worker(
-        master_client: MasterStub,
-        worker_server_port: int,
-        master_server_port,
-        simple_input_dir: Path,
+    master_client: MasterStub,
+    worker_server_port: int,
+    master_server_port,
+    simple_input_dir: Path,
 ):
     # register the client
-    reg_req = RegisterServiceMes(service_address="localhost", service_port=worker_server_port)
+    reg_req = RegisterServiceMes(
+        service_address="localhost", service_port=worker_server_port
+    )
     master_client.RegisterService(reg_req)
-    mapreduce_req = MapReduceRequest(input_dir=simple_input_dir.absolute().as_posix(), num_partitions=2)
+    mapreduce_req = MapReduceRequest(
+        input_dir=simple_input_dir.absolute().as_posix(), num_partitions=2
+    )
     response = master_client.MapReduce(mapreduce_req)
 
-    assert read_mapreduce_outputs(Path(response.output_dir)) == count_words(simple_input_dir)
+    assert read_mapreduce_outputs(Path(response.output_dir)) == count_words(
+        simple_input_dir
+    )

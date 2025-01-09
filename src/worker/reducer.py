@@ -49,6 +49,9 @@ def process_reduce_task(intermediate_paths: List[Path], output_path: Path) -> No
 
 class Reducer(ReducerServicer):
     def Reduce(self, reduce_task, context):
-        process_reduce_task([Path(p) for p in reduce_task.partition_paths], Path(reduce_task.output_path))
+        process_reduce_task(
+            [Path(p) for p in reduce_task.partition_paths],
+            Path(reduce_task.output_path),
+        )
 
         return ReduceResponse()

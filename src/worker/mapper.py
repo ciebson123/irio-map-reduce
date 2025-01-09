@@ -13,7 +13,9 @@ def _get_partition_idx(word: str, num_partitions: int) -> int:
     return xxh32_intdigest(word) % num_partitions
 
 
-def process_map_task(input_path: Path, num_partitions: int, output_dir: Path) -> List[Path]:
+def process_map_task(
+    input_path: Path, num_partitions: int, output_dir: Path
+) -> List[Path]:
     """
     Processes the map task. Since it's output is split into num_partitions files, it
     returns the output paths in a list of paths (in ascending order with regard to the partition num).
@@ -52,7 +54,10 @@ def process_map_task(input_path: Path, num_partitions: int, output_dir: Path) ->
         with output_dir.joinpath(str(partition_num)).open("a") as output_file:
             output_file.write(f"{word} {count}\n")
 
-    return [output_dir.joinpath(str(partition_num)) for partition_num in range(num_partitions)]
+    return [
+        output_dir.joinpath(str(partition_num))
+        for partition_num in range(num_partitions)
+    ]
 
 
 class Mapper(MapperServicer):
@@ -63,7 +68,9 @@ class Mapper(MapperServicer):
                 map_task.num_partitions,
                 Path(map_task.output_dir),
             )
-            res = MapResponse(partition_paths=[p.absolute().as_posix() for p in partition_paths])
+            res = MapResponse(
+                partition_paths=[p.absolute().as_posix() for p in partition_paths]
+            )
             return res
         except ValueError as e:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(e))

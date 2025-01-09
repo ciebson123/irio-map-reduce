@@ -23,7 +23,7 @@ def build_worker_server() -> _Server:
 
 def register_with_master(port: int):
     my_ip = os.environ.get("MY_POD_IP")
-    with grpc.insecure_channel(f"master-service:8080") as channel:
+    with grpc.insecure_channel("master-service:8080") as channel:
         register_message = RegisterServiceMes(service_address=my_ip, service_port=port)
         MasterStub(channel).RegisterService(register_message)
     logging.info("Registered with master")

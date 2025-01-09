@@ -15,6 +15,27 @@ To run all tests in a module, you can provide a path. For example:
 pytest tests/service
 ```
 
+## Ruff
+To run the linter, use
+```shell
+ruff check
+```
+It will propose changes if any problems found. To apply, use 
+```shell
+ruff check --fix
+```
+
+Similarly, for the formatter:
+```shell
+ruff format --check
+```
+and 
+```shell
+ruff format
+```
+
+These will be run in github actions and the pipeline will fail if any checks or tests fail.
+
 ## Build docker
 
 First, [install docker](https://docs.docker.com/engine/install/ubuntu/)

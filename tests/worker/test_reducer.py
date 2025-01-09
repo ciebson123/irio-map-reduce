@@ -53,7 +53,9 @@ def _read_output_kval(output_path: Path):
     return output_result_kval
 
 
-def test_process_reduce_produces_correct_output_on_simple_file(simple_file_paths: Tuple[Path, Path], tmp_path: Path):
+def test_process_reduce_produces_correct_output_on_simple_file(
+    simple_file_paths: Tuple[Path, Path], tmp_path: Path
+):
     out_path = tmp_path / "res"
     expected_result_kval = _get_expected_result_kval(SPLIT_INTERMEDIATE_KVS)
 
@@ -64,8 +66,9 @@ def test_process_reduce_produces_correct_output_on_simple_file(simple_file_paths
     assert output_result_kval == expected_result_kval
 
 
-def test_grpc_reducer_servicer_produces_files(reducer_client: ReducerStub, tmp_path: Path,
-                                              simple_file_paths: Tuple[Path, Path]):
+def test_grpc_reducer_servicer_produces_files(
+    reducer_client: ReducerStub, tmp_path: Path, simple_file_paths: Tuple[Path, Path]
+):
     out_path = tmp_path / "grpc_reducer_produces_files"
     expected_result_kval = _get_expected_result_kval(SPLIT_INTERMEDIATE_KVS)
 
