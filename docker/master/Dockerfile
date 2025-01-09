@@ -45,6 +45,9 @@ ENV PYTHONPATH "${PYTHONPATH}:/master"
 
 RUN ./build_protos.sh
 
+# For manual testing
+RUN apt-get -y update; apt-get -y install curl; apt-get -y install unzip
+
 # Switch to the non-privileged user to run the application.
 USER appuser
 

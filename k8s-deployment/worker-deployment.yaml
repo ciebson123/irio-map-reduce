@@ -14,6 +14,13 @@ spec:
       labels:
         app: worker-app
     spec:
+      initContainers:
+      - name: init-permissions
+        image: busybox
+        command: [ "sh", "-c", "chown -R 10001:10001 /mapreduce" ]
+        volumeMounts:
+          - mountPath: /mapreduce
+            name: fileserver
       containers:
       - name: worker-container
         image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-worker:v$IMAGE_REMOTE_VERSION
