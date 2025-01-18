@@ -6,9 +6,9 @@ import grpc
 import pytest
 from xxhash import xxh32_intdigest
 
-from src.generated_files.mapper_pb2 import MapTask
-from src.generated_files.mapper_pb2_grpc import MapperStub
-from src.worker.mapper import process_map_task
+from src.generated_files.worker_pb2 import MapTask
+from src.generated_files.worker_pb2_grpc import WorkerStub
+from src.worker.worker import process_map_task
 
 SIMPLE_WORDS = [
     "foo",
@@ -41,7 +41,7 @@ def simple_file_path(tmp_path):
 @pytest.fixture(scope="module")
 def mapper_client(worker_server_port):
     with grpc.insecure_channel("localhost:" + str(worker_server_port)) as channel:
-        stub = MapperStub(channel)
+        stub = WorkerStub(channel)
         yield stub
 
 
@@ -87,7 +87,7 @@ def test_map_process_produces_correct_output_on_simple_input(
 
 
 def test_grpc_mapper_servicer_produces_files(
-    mapper_client: MapperStub, tmp_path: Path, simple_file_path: Path
+    mapper_client: WorkerStub, tmp_path: Path, simple_file_path: Path
 ):
     tmp_dir_path = tmp_path / "mapper_servicer_produces_files"
     tmp_dir_path.mkdir()
@@ -113,7 +113,7 @@ def test_grpc_mapper_servicer_produces_files(
 
 
 def test_grpc_mapper_servicer_handles_invalid_num_partitions(
-    mapper_client: MapperStub, tmp_path: Path, simple_file_path: Path
+    mapper_client: WorkerStub, tmp_path: Path, simple_file_path: Path
 ):
     tmp_dir_path = tmp_path / "mapper_servicer_handles_invalid_num_partitions"
     tmp_dir_path.mkdir()
