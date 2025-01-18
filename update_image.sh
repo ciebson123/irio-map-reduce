@@ -31,3 +31,4 @@ docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/$IMAGE2_NAME:v$I
 # Deploy the images to the cluster
 envsubst <k8s-deployment/master-deployment.yaml | kubectl apply -f -
 envsubst <k8s-deployment/worker-deployment.yaml | kubectl apply -f -
+envsubst <k8s-deployment/update-deployment.yaml | kubectl apply -f -

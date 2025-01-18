@@ -8,6 +8,7 @@ source ./.env
 kubectl delete service master-service
 kubectl delete deployment master-app
 kubectl delete deployment worker-app
+kubectl delete deployment update-app
 
 # delete the pvc to delete filestore
 kubectl delete pvc fileserver

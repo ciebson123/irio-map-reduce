@@ -52,6 +52,4 @@ kubectl create -f k8s-deployment/storage/pvc.yaml
 
 envsubst <k8s-deployment/master-deployment.yaml | kubectl apply -f -
 envsubst <k8s-deployment/worker-deployment.yaml | kubectl apply -f -
-
-
-
+envsubst <k8s-deployment/upload-deployment.yaml | kubectl apply -f -

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package mapreduce;
+
+service Upload {
+    rpc DoUpload(UploadRequest) returns (google.protobuf.Empty) {};
+}
+
+message UploadRequest {
+    string link = 1;
+}
