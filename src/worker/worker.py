@@ -1,16 +1,56 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
-from typing import List
+from typing import List, DefaultDict
 
 import grpc
 from xxhash import xxh32_intdigest
 
-from src.generated_files.mapper_pb2 import MapResponse
-from src.generated_files.mapper_pb2_grpc import MapperServicer
+from src.generated_files.worker_pb2 import MapResponse, ReduceResponse
+from src.generated_files.worker_pb2_grpc import WorkerServicer
 
 
 def _get_partition_idx(word: str, num_partitions: int) -> int:
     return xxh32_intdigest(word) % num_partitions
+
+def _update_kval_from_file(kvals: DefaultDict[str, List[int]], path: Path) -> None:
+    with open(path, "r") as input_file:
+        for line in input_file:
+            key_val = line.strip().split()
+            kvals[key_val[0]].append(int(key_val[1]))
+
+
+def process_reduce_task(intermediate_paths: List[Path], output_path: Path) -> None:
+    """
+    Processes the reduce task. Its input is split into num_mapper files of format
+
+    "word <count of occurences of word>"
+
+    For now, it represents just a simple, predetermined word counting functionality.
+
+    It shall create a single file (under output_path) having n lines of the same format as input, but n is the number
+    of **unique** words/keys.
+
+    Simplifying assumption
+
+    * inputs can fit in memory
+
+    :param intermediate_paths:
+    :param output_path:
+    :return:
+    """
+    kvals = defaultdict(list)
+    for intermediate_path in intermediate_paths:
+        _update_kval_from_file(kvals, intermediate_path)
+
+    # reduce
+    result = {}
+    for key, values in kvals.items():
+        result[key] = sum(values)
+
+    # save
+    with output_path.open("w") as output_file:
+        for key, value in result.items():
+            output_file.write(f"{key} {value}\n")
 
 
 def process_map_task(
@@ -60,7 +100,7 @@ def process_map_task(
     ]
 
 
-class Mapper(MapperServicer):
+class Worker(WorkerServicer):
     def Map(self, map_task, context):
         try:
             partition_paths = process_map_task(
@@ -74,3 +114,11 @@ class Mapper(MapperServicer):
             return res
         except ValueError as e:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(e))
+            
+    def Reduce(self, reduce_task, context):
+        process_reduce_task(
+            [Path(p) for p in reduce_task.partition_paths],
+            Path(reduce_task.output_path),
+        )
+
+        return ReduceResponse()

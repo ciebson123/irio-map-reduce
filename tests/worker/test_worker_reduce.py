@@ -5,9 +5,9 @@ from typing import Tuple, List
 import grpc
 import pytest
 
-from src.generated_files.reducer_pb2 import ReduceTask
-from src.generated_files.reducer_pb2_grpc import ReducerStub
-from src.worker.reducer import process_reduce_task
+from src.generated_files.worker_pb2 import ReduceTask
+from src.generated_files.worker_pb2_grpc import WorkerStub
+from src.worker.worker import process_reduce_task
 
 SPLIT_INTERMEDIATE_KVS = [
     [("key1", 3), ("key2", 4), ("key3", 5), ("key4", 6), ("key1", 7)],
@@ -31,7 +31,7 @@ def simple_file_paths(tmp_path):
 @pytest.fixture(scope="module")
 def reducer_client(worker_server_port):
     with grpc.insecure_channel("localhost:" + str(worker_server_port)) as channel:
-        stub = ReducerStub(channel)
+        stub = WorkerStub(channel)
         yield stub
 
 
@@ -67,7 +67,7 @@ def test_process_reduce_produces_correct_output_on_simple_file(
 
 
 def test_grpc_reducer_servicer_produces_files(
-    reducer_client: ReducerStub, tmp_path: Path, simple_file_paths: Tuple[Path, Path]
+    reducer_client: WorkerStub, tmp_path: Path, simple_file_paths: Tuple[Path, Path]
 ):
     out_path = tmp_path / "grpc_reducer_produces_files"
     expected_result_kval = _get_expected_result_kval(SPLIT_INTERMEDIATE_KVS)
