@@ -5,11 +5,12 @@ import requests
 import grpc
 from google.protobuf.empty_pb2 import Empty
 from src.generated_files.upload_pb2 import UploadRequest
+from pathlib import Path
 
 
 class Upload:
     def __init__(self, shared_dir: Path):
-        return
+        self.shared_dir = shared_dir
 
     async def DoUpload(self, request: UploadRequest, context: grpc.aio.ServicerContext):
         logging.info(
@@ -18,12 +19,11 @@ class Upload:
         )
         try:
             # Ensure the directory exists (not likely to fail)
-            os.makedirs(shared_dir, exist_ok=True)
+            os.makedirs(self.shared_dir, exist_ok=True)
 
-            if not filename:
-                filename = request.link.split("/")[-1]
+            filename = request.link.split("/")[-1]
 
-            file_path = os.path.join(shared_dir, filename)
+            file_path = os.path.join(self.shared_dir, filename)
 
             response = requests.get(request.link, stream=True)
             response.raise_for_status()  # Raise HTTPError for bad responses
