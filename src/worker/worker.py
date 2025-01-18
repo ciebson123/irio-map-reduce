@@ -12,6 +12,7 @@ from src.generated_files.worker_pb2_grpc import WorkerServicer
 def _get_partition_idx(word: str, num_partitions: int) -> int:
     return xxh32_intdigest(word) % num_partitions
 
+
 def _update_kval_from_file(kvals: DefaultDict[str, List[int]], path: Path) -> None:
     with open(path, "r") as input_file:
         for line in input_file:
@@ -114,7 +115,7 @@ class Worker(WorkerServicer):
             return res
         except ValueError as e:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(e))
-            
+
     def Reduce(self, reduce_task, context):
         process_reduce_task(
             [Path(p) for p in reduce_task.partition_paths],
