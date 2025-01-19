@@ -16,7 +16,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
 
-WORKDIR /master
+WORKDIR /upload
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
@@ -35,15 +35,13 @@ RUN adduser \
 # Leverage a bind mount to requirements.txt to avoid having to copy them into
 # into this layer.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python -m pip install -r requirements.txt 
+    --mount=type=bind,source=requirements_upload.txt,target=requirements_upload.txt \
+    python -m pip install -r requirements_upload.txt 
 
 # Copy the source code into the container.
 COPY . .
 
 ENV PYTHONPATH "${PYTHONPATH}:/upload"
-
-RUN ./build_protos.sh
 
 # For manual testing
 RUN apt-get -y update; apt-get -y install curl; apt-get -y install unzip

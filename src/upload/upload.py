@@ -1,40 +1,32 @@
+from fastapi import FastAPI, Query
 import logging
 import os
 import requests
 
-import grpc
-from google.protobuf.empty_pb2 import Empty
-from src.generated_files.upload_pb2 import UploadRequest
-from pathlib import Path
+app = FastAPI()
 
 
-class Upload:
-    def __init__(self, shared_dir: Path):
-        self.shared_dir = shared_dir
+@app.get("/")
+async def upload_file(
+    url: str = Query(..., description="The URL of the file to download"),
+):
+    """
+    Downloads a file from the provided URL and saves it locally.
+    """
+    try:
+        filename = url.split("/")[-1] or "downloaded_file"
+        filepath = os.path.join(app.shared_dir, filename)
 
-    async def DoUpload(self, request: UploadRequest, context: grpc.aio.ServicerContext):
-        logging.info(
-            "Received Upload request.\nLink: %s",
-            request.link,
-        )
-        try:
-            # Ensure the directory exists (not likely to fail)
-            os.makedirs(self.shared_dir, exist_ok=True)
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
 
-            filename = request.link.split("/")[-1]
+        with open(filepath, "wb") as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
 
-            file_path = os.path.join(self.shared_dir, filename)
+        logging.info(f"File downloaded successfully: {filepath}")
+        return {"message": "Success"}, 200
 
-            response = requests.get(request.link, stream=True)
-            response.raise_for_status()  # Raise HTTPError for bad responses
-
-            with open(file_path, "wb") as file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    file.write(chunk)
-
-            logging.info(f"File downloaded successfully: {file_path}")
-            return Empty()
-
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error downloading file: {e}")
-            return Empty()
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Failed to download file: {str(e)}")
+        return {"message": "Failure"}, 500

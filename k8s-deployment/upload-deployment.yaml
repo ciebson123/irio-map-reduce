@@ -22,8 +22,8 @@ spec:
           - mountPath: /mapreduce
             name: fileserver
       containers:
-      - name: master-container
-        image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-master:v$IMAGE_REMOTE_VERSION
+      - name: upload-container
+        image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-upload:v$IMAGE_REMOTE_VERSION
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
