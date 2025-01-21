@@ -5,18 +5,16 @@ import os
 import grpc
 from grpc._server import _Server
 
-from src.generated_files import reducer_pb2_grpc, mapper_pb2_grpc
+from src.generated_files import worker_pb2_grpc
 from src.generated_files.master_pb2_grpc import MasterStub
 from src.generated_files.master_pb2 import RegisterServiceMes
-from src.worker.mapper import Mapper
-from src.worker.reducer import Reducer
+from src.worker.worker import Worker
 
 
 def build_worker_server() -> _Server:
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
 
-    mapper_pb2_grpc.add_MapperServicer_to_server(Mapper(), server)
-    reducer_pb2_grpc.add_ReducerServicer_to_server(Reducer(), server)
+    worker_pb2_grpc.add_WorkerServicer_to_server(Worker(), server)
 
     return server
 

@@ -3,11 +3,17 @@ syntax = "proto3";
 package mapreduce;
 
 
-service Mapper {
-
+service Worker {
+    rpc Reduce(ReduceTask) returns (ReduceResponse) {}
     rpc Map(MapTask) returns (MapResponse) {}
-
 }
+
+message ReduceTask {
+    repeated string partition_paths = 1;
+    string output_path = 2;
+}
+
+message ReduceResponse {}
 
 message MapTask {
     string file_path = 1;

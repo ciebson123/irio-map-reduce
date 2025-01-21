@@ -7,16 +7,14 @@ from typing import List, Tuple
 import grpc
 from google.protobuf.empty_pb2 import Empty
 
-from src.generated_files.mapper_pb2 import MapTask, MapResponse
-from src.generated_files.mapper_pb2_grpc import MapperStub
+from src.generated_files.worker_pb2 import MapTask, MapResponse, ReduceTask
+from src.generated_files.worker_pb2_grpc import WorkerStub
 from src.generated_files.master_pb2 import (
     RegisterServiceMes,
     MapReduceRequest,
     MapReduceResponse,
 )
 from src.generated_files.master_pb2_grpc import MasterServicer
-from src.generated_files.reducer_pb2 import ReduceTask
-from src.generated_files.reducer_pb2_grpc import ReducerStub
 
 
 class MasterState:
@@ -124,7 +122,7 @@ class MasterState:
 
             try:
                 async with grpc.aio.insecure_channel(next_idle_worker) as channel:
-                    map_response = await MapperStub(channel).Map(idle_task)
+                    map_response = await WorkerStub(channel).Map(idle_task)
             except grpc.RpcError as e:
                 logging.warning(
                     "Error when sending map task %s to %s.\nError:%s",
@@ -151,7 +149,7 @@ class MasterState:
 
             try:
                 async with grpc.aio.insecure_channel(next_idle_worker) as channel:
-                    await ReducerStub(channel).Reduce(idle_task)
+                    await WorkerStub(channel).Reduce(idle_task)
             except grpc.RpcError as e:
                 logging.warning(
                     "Error when sending reduce task %s to %s.\nError:%s",
