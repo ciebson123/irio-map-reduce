@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upload-app
+  labels:
+    app: upload-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: upload-app
+  template:
+    metadata:
+      labels:
+        app: upload-app
+    spec:
+      initContainers:
+      - name: init-permissions
+        image: busybox
+        command: [ "sh", "-c", "chown -R 10001:10001 /mapreduce" ]
+        volumeMounts:
+          - mountPath: /mapreduce
+            name: fileserver
+      containers:
+      - name: upload-container
+        image: $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY_NAME/irio-map-reduce-upload:v$IMAGE_REMOTE_VERSION
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - mountPath: /mapreduce
+          name: fileserver
+        env:
+        - name: SHARED_DIR
+          value: /mapreduce
+      volumes:
+      - name: fileserver
+        persistentVolumeClaim:
+          claimName: fileserver
+      
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: upload-service
+spec:
+  selector:
+    app: upload-app
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8000
+  type: LoadBalancer
