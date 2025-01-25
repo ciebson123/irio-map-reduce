@@ -38,6 +38,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements_upload.txt,target=requirements_upload.txt \
     python -m pip install -r requirements_upload.txt 
 
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    python -m pip install -r requirements.txt 
+
 # Copy the source code into the container.
 COPY . .
 

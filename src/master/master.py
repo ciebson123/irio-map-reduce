@@ -222,10 +222,15 @@ class Master(MasterServicer):
         self, request: MapReduceRequest, context: grpc.aio.ServicerContext
     ):
         logging.info(
-            "Master received MapReduce request.\nInput dir: %s, num_partitions: %d",
+            "Master received MapReduce request.\nInput dir: %s, num_partitions: %d, work_dir: %s",
             request.input_dir,
             request.num_partitions,
+            request.work_dir,
         )
+
+        if request.work_dir is not None and request.work_dir != "":
+            self.state.map_out_dir = Path(request.work_dir) / "map_task"
+            self.state.reduce_out_dir = Path(request.work_dir) / "reduce_output"
 
         await self.state.initialize_computation(
             Path(request.input_dir), request.num_partitions

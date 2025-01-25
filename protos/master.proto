@@ -18,6 +18,7 @@ message RegisterServiceMes {
 message MapReduceRequest {
     string input_dir = 1;
     int32 num_partitions = 2;
+    optional string work_dir = 3;
 }
 
 message MapReduceResponse {
