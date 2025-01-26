@@ -9,6 +9,7 @@ from src.generated_files import worker_pb2_grpc
 from src.generated_files.master_pb2_grpc import MasterStub
 from src.generated_files.master_pb2 import RegisterServiceMes
 from src.worker.worker import Worker
+import sys
 
 
 def build_worker_server() -> _Server:
@@ -28,7 +29,11 @@ def register_with_master(port: int):
 
 
 if __name__ == "__main__":
-    logging.basicConfig()
+    logging.basicConfig(
+        level=logging.DEBUG,  # Set the logging level
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Set the log format
+        handlers=[logging.StreamHandler(sys.stdout)],  # Add a StreamHandler for stdout
+    )
     logger = logging.getLogger()
     logger.info("Starting worker server")
     serv = build_worker_server()

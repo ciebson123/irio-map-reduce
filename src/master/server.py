@@ -9,6 +9,7 @@ import grpc
 
 from src.generated_files import master_pb2_grpc
 from src.master.master import Master
+import sys
 
 
 def build_master_server(shared_dir: Path) -> grpc.Server:
@@ -49,7 +50,11 @@ async def serve_test(
 
 
 if __name__ == "__main__":
-    logging.basicConfig()
+    logging.basicConfig(
+        level=logging.DEBUG,  # Set the logging level
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Set the log format
+        handlers=[logging.StreamHandler(sys.stdout)],  # Add a StreamHandler for stdout
+    )
     logger = logging.getLogger()
     logger.info("Starting master server")
     s_dir = Path(os.environ.get("SHARED_DIR"))
