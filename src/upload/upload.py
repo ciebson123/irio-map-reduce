@@ -15,6 +15,7 @@ app = FastAPI()
 
 CHUNK_SIZE = 10 * 1024 * 1024  # 10 MB
 
+
 def cleanup(temp_dir: Path):
     """Remove temporary directory and its contents."""
     shutil.rmtree(temp_dir, ignore_errors=True)
@@ -23,32 +24,29 @@ def cleanup(temp_dir: Path):
 
 def split_large_files(directory: Path):
     """Split files larger than CHUNK_SIZE into smaller parts on newlines."""
-    for file_path in directory.rglob('*'):
+    for file_path in directory.rglob("*"):
         if file_path.is_file() and file_path.stat().st_size > CHUNK_SIZE:
             logging.info(f"Splitting large file: {file_path}")
             try:
                 # Generate prefix for split files
                 prefix = file_path.parent / f"{file_path.stem}_part_"
-                
+
                 # Build split command
                 cmd = [
                     "split",
-                    "-C", str(CHUNK_SIZE),  # Maintain line integrity
+                    "-C",
+                    str(CHUNK_SIZE),  # Maintain line integrity
                     "--numeric-suffixes=1",
                     "--suffix-length=3",
-                    "--additional-suffix", file_path.suffix,
+                    "--additional-suffix",
+                    file_path.suffix,
                     str(file_path),
-                    str(prefix)
+                    str(prefix),
                 ]
-                
+
                 # Execute command
-                result = subprocess.run(
-                    cmd,
-                    check=True,
-                    capture_output=True,
-                    text=True
-                )
-                
+                result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+
                 # Remove original file if split succeeded
                 file_path.unlink()
                 logging.info(f"Split successful: {result.stderr}")
@@ -57,6 +55,7 @@ def split_large_files(directory: Path):
                 logging.error(f"Split failed for {file_path}: {e.stderr}")
             except Exception as e:
                 logging.error(f"Error processing {file_path}: {str(e)}")
+
 
 @app.post("/", response_class=FileResponse)
 async def map_reduce_request(
@@ -100,7 +99,7 @@ async def map_reduce_request(
         else:
             actual_input_dir = input_dir  # Use the root directory
             logging.info(f"Using root directory as input: {actual_input_dir}")
-            
+
         # Split large files
         split_large_files(actual_input_dir)
 
