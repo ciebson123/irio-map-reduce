@@ -10,7 +10,18 @@ def _update_kval_from_file(kvals: DefaultDict[str, List[int]], path: Path) -> No
             key_val = line.strip().split()
             kvals[key_val[0]].append(int(key_val[1]))
 
+
 def main():
+    """
+    Example implementation of a reducer for a word-counting mapper.
+
+    Its input is split into num_mapper files of format
+
+    "word <count of occurences of word>"
+
+    It shall create a single file (under output_path) having n lines of the same format as input, but n is the number
+    of **unique** words/keys.
+    """
     args = sys.argv[1:]
 
     if not args or len(args) < 2:

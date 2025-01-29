@@ -1,7 +1,4 @@
 import sys
-from typing import List, DefaultDict
-from pathlib import Path
-from collections import defaultdict
 from xxhash import xxh32_intdigest
 from collections import Counter
 
@@ -11,6 +8,17 @@ def _get_partition_idx(word: str, num_partitions: int) -> int:
 
 
 def main():
+    """
+    Example implementation of a mapper that counts occurences of each word in a file.
+
+    Each of the num_partitions output files will have n lines of form
+
+        "word <count of occurences of word>"
+
+        where i-th file will contain words such that xxh32_intdigest(word) % num_partitions == i
+        and n is the number of words.
+
+    """
     args = sys.argv[1:]
 
     if not args or len(args) < 3:

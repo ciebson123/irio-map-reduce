@@ -21,7 +21,7 @@ def process_reduce_task(
     * inputs can fit in memory
 
     :param intermediate_paths:
-    :param output_path: 
+    :param output_path:
     :param reducer_path: path to Python file that contains the reducer code
     :return:
     """
