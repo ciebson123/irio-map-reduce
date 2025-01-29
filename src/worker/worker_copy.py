@@ -25,7 +25,7 @@ def process_reduce_task(
     :param reducer_path: path to Python file that contains the reducer code
     :return:
     """
-    subprocess.run(["python", reducer_path, output_path, *intermediate_paths])
+    subprocess.run(["python3", reducer_path, output_path, *intermediate_paths])
 
 
 def process_map_task(
@@ -50,7 +50,7 @@ def process_map_task(
     if num_partitions <= 0:
         raise ValueError("num_partitions must be greater than zero")
 
-    subprocess.run(["python", mapper_path, input_path, num_partitions, output_dir])
+    subprocess.run(["python3", mapper_path, input_path, num_partitions, output_dir])
 
     return [
         output_dir.joinpath(str(partition_num))
