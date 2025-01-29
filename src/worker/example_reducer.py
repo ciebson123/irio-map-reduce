@@ -2,6 +2,7 @@ import sys
 from typing import List, DefaultDict
 from pathlib import Path
 from collections import defaultdict
+import logging
 
 
 def _update_kval_from_file(kvals: DefaultDict[str, List[int]], path: Path) -> None:
@@ -25,11 +26,11 @@ def main():
     args = sys.argv[1:]
 
     if not args or len(args) < 2:
-        print("No arguments received. Please provide some arguments.")
-        return
+        logging.error("Did not receive enough arguments")
+        sys.exit(1)
 
-    output_path = args[1]
-    intermediate_paths = args[2:]
+    output_path = Path(args[0])
+    intermediate_paths = [Path(i) for i in args[1:]]
 
     kvals = defaultdict(list)
     for intermediate_path in intermediate_paths:
@@ -47,4 +48,10 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.DEBUG,  # Set the logging level
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Set the log format
+        handlers=[logging.StreamHandler(sys.stdout)],  # Add a StreamHandler for stdout
+    )
+    logger = logging.getLogger()
     main()

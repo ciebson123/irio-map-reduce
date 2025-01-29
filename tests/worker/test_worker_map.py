@@ -25,6 +25,8 @@ SIMPLE_WORDS = [
     "bizz",
 ]
 
+MAPPER_PATH = Path("src/worker/example_mapper.py").absolute()
+
 
 @pytest.fixture
 def simple_file_path(tmp_path):
@@ -56,7 +58,7 @@ def test_given_invalid_num_partitions_process_map_task_raises(
     num_partitions: int, simple_file_path: Path, tmp_path: Path
 ):
     with pytest.raises(ValueError):
-        process_map_task(simple_file_path, num_partitions, tmp_path)
+        process_map_task(simple_file_path, num_partitions, tmp_path, MAPPER_PATH)
 
 
 def _get_expected_partition_lines(num_partitions: int, word_list: List[str]):
@@ -77,7 +79,9 @@ def test_map_process_produces_correct_output_on_simple_input(
         num_partitions, SIMPLE_WORDS
     )
 
-    output_paths = process_map_task(simple_file_path, num_partitions, tmp_path)
+    output_paths = process_map_task(
+        simple_file_path, num_partitions, tmp_path, MAPPER_PATH
+    )
 
     for idx, path in enumerate(output_paths):
         with open(path, "r") as single_partition_file:
@@ -101,6 +105,7 @@ def test_grpc_mapper_servicer_produces_files(
         file_path=simple_file_path.absolute().as_posix(),
         num_partitions=num_partitions,
         output_dir=tmp_dir_path.absolute().as_posix(),
+        mapper_path=MAPPER_PATH.as_posix(),
     )
 
     response = mapper_client.Map(map_task)  # if status code not ok then this will throw
@@ -122,6 +127,7 @@ def test_grpc_mapper_servicer_handles_invalid_num_partitions(
         file_path=simple_file_path.absolute().as_posix(),
         num_partitions=0,
         output_dir=tmp_dir_path.absolute().as_posix(),
+        mapper_path=MAPPER_PATH.absolute().as_posix(),
     )
 
     with pytest.raises(grpc.RpcError) as grpc_error:
