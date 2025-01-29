@@ -127,7 +127,7 @@ def test_grpc_mapper_servicer_handles_invalid_num_partitions(
         file_path=simple_file_path.absolute().as_posix(),
         num_partitions=0,
         output_dir=tmp_dir_path.absolute().as_posix(),
-        mapper_path=MAPPER_PATH.absolute().as_posix(),
+        mapper_path=MAPPER_PATH.as_posix(),
     )
 
     with pytest.raises(grpc.RpcError) as grpc_error:

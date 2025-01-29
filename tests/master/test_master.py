@@ -6,6 +6,9 @@ from src.generated_files.master_pb2 import RegisterServiceMes, MapReduceRequest
 from src.generated_files.master_pb2_grpc import MasterStub
 from tests.utils import read_mapreduce_outputs, count_words
 
+REDUCER_PATH = Path("src/worker/example_reducer.py").absolute()
+MAPPER_PATH = Path("src/worker/example_mapper.py").absolute()
+
 
 @pytest.fixture
 def simple_input_dir(tmp_path: Path):
@@ -40,7 +43,10 @@ def test_master_performs_mapreduce_with_one_worker(
     )
     master_client.RegisterService(reg_req)
     mapreduce_req = MapReduceRequest(
-        input_dir=simple_input_dir.absolute().as_posix(), num_partitions=2
+        input_dir=simple_input_dir.absolute().as_posix(),
+        num_partitions=2,
+        mapper_path=MAPPER_PATH.as_posix(),
+        reducer_path=REDUCER_PATH.as_posix(),
     )
     response = master_client.MapReduce(mapreduce_req)
 

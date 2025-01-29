@@ -23,6 +23,9 @@ class MasterState:
         self.reduce_out_dir = shared_dir / "reduce_output"
         self.map_out_dir = shared_dir / "map_task"
 
+        self.mapper_path = ""
+        self.reducer_path = ""
+
         self.map_tasks_num: int | None = None
         self.reduce_tasks_num: int | None = None
 
@@ -65,6 +68,7 @@ class MasterState:
                     file_path=input_files[idx].absolute().as_posix(),
                     num_partitions=self.reduce_tasks_num,
                     output_dir=out_dir.absolute().as_posix(),
+                    mapper_path=self.mapper_path.absolute().as_posix(),
                 )
             )
         logging.info(
@@ -176,6 +180,7 @@ class MasterState:
                 output_path=(self.reduce_out_dir / f"reduce_task_{idx}")
                 .absolute()
                 .as_posix(),
+                reducer_path=self.reducer_path.absolute().as_posix(),
             )
             for idx in range(self.reduce_tasks_num)
         ]
@@ -223,10 +228,12 @@ class Master(MasterServicer):
         self, request: MapReduceRequest, context: grpc.aio.ServicerContext
     ):
         logging.info(
-            "Master received MapReduce request.\nInput dir: %s, num_partitions: %d, work_dir: %s",
+            "Master received MapReduce request.\nInput dir: %s, num_partitions: %d, work_dir: %s, mapper_path: %s, reducer_path: %s",
             request.input_dir,
             request.num_partitions,
             request.work_dir,
+            request.mapper_path,
+            request.reducer_path,
         )
 
         if request.work_dir is not None and request.work_dir != "":
@@ -235,6 +242,9 @@ class Master(MasterServicer):
         else:
             self.state.map_out_dir = self.state.shared_dir / "map_task"
             self.state.reduce_out_dir = self.state.shared_dir / "reduce_output"
+
+        self.state.mapper_path = Path(request.mapper_path)
+        self.state.reducer_path = Path(request.reducer_path)
 
         await self.state.initialize_computation(
             Path(request.input_dir), request.num_partitions

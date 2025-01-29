@@ -22,7 +22,7 @@ def process_reduce_task(
 
     :param intermediate_paths:
     :param output_path:
-    :param reducer_path: path to Python file that contains the reducer code
+    :param reducer_path: absolute path to Python file that contains the reducer code
     :return:
     """
     subprocess.run(

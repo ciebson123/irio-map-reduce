@@ -10,6 +10,8 @@ from tests.utils import read_mapreduce_outputs, count_words
 
 NUM_WORKERS = 16
 TEST_INPUT_DIR = Path(__file__).parent / "test_files" / "input"
+MAPPER_PATH = Path("src/worker/example_mapper.py").absolute()
+REDUCER_PATH = Path("src/worker/example_reducer.py").absolute()
 
 
 @pytest.fixture
@@ -38,6 +40,8 @@ def test_big_files_multiple_workers(
         MapReduceRequest(
             input_dir=TEST_INPUT_DIR.absolute().as_posix(),
             num_partitions=num_partitions,
+            mapper_path=MAPPER_PATH.as_posix(),
+            reducer_path=REDUCER_PATH.as_posix(),
         ),
     )
 

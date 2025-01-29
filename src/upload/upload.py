@@ -14,6 +14,9 @@ import subprocess
 app = FastAPI()
 
 CHUNK_SIZE = 10 * 1024 * 1024  # 10 MB
+SOURCE_CODE_DIR = "code"
+MAPPER_FILE_NAME = "mapper.py"
+REDUCER_FILE_NAME = "reducer.py"
 
 
 def cleanup(temp_dir: Path):
@@ -55,6 +58,34 @@ def split_large_files(directory: Path):
                 logging.error(f"Split failed for {file_path}: {e.stderr}")
             except Exception as e:
                 logging.error(f"Error processing {file_path}: {str(e)}")
+
+
+@app.post("/mapper-reducer/")
+async def upload_mapper(
+    mapper_file: UploadFile = File(..., description="Python file with mapper code"),
+    reducer_file: UploadFile = File(..., description="Python file with reducer code"),
+):
+    try:
+        source_code_path = Path(app.shared_dir) / SOURCE_CODE_DIR
+        mapper_path = source_code_path / MAPPER_FILE_NAME
+        with open(mapper_path, "wb") as f:
+            content = await mapper_file.read()
+            f.write(content)
+
+        logging.info(f"Saved mapper to: {mapper_path}")
+
+        reducer_path = source_code_path / REDUCER_FILE_NAME
+        with open(reducer_path, "wb") as f:
+            content = await reducer_file.read()
+            f.write(content)
+
+        logging.info(f"Saved reducer to: {reducer_path}")
+
+        return {}, 201
+
+    except Exception as e:
+        logging.error(f"Error processing request: {str(e)}", exc_info=True)
+        return {"message": f"Processing error: {str(e)}"}, 500
 
 
 @app.post("/", response_class=FileResponse)
@@ -103,6 +134,17 @@ async def map_reduce_request(
         # Split large files
         split_large_files(actual_input_dir)
 
+        # Copy the the current versions of mapper and reducer code to the temporary directory
+        source_code_path = Path(app.shared_dir) / SOURCE_CODE_DIR
+        mapper_path = source_code_path / MAPPER_FILE_NAME
+        reducer_path = source_code_path / REDUCER_FILE_NAME
+
+        temp_mapper_path = temp_dir / SOURCE_CODE_DIR / MAPPER_FILE_NAME
+        temp_reducer_path = temp_dir / SOURCE_CODE_DIR / REDUCER_FILE_NAME
+
+        shutil.copy(mapper_path, temp_mapper_path)
+        shutil.copy(reducer_path, temp_reducer_path)
+
         # Call MapReduce service
         with grpc.insecure_channel("master-service:8080") as channel:
             stub = MasterStub(channel)
@@ -110,6 +152,8 @@ async def map_reduce_request(
                 input_dir=str(actual_input_dir),
                 num_partitions=num_partitions,
                 work_dir=str(temp_dir),
+                mapper_path=str(temp_mapper_path),
+                reducer_path=str(temp_reducer_path),
             )
             response: MapReduceResponse = stub.MapReduce(request)
             output_dir = Path(response.output_dir)
