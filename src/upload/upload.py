@@ -66,15 +66,16 @@ async def upload_mapper(
     reducer_file: UploadFile = File(..., description="Python file with reducer code"),
 ):
     try:
-        source_code_path = Path(app.shared_dir) / SOURCE_CODE_DIR
-        mapper_path = source_code_path / MAPPER_FILE_NAME
+        source_code_dir = Path(app.shared_dir) / SOURCE_CODE_DIR
+        source_code_dir.mkdir(parents=True, exist_ok=True)
+        mapper_path = source_code_dir / MAPPER_FILE_NAME
         with open(mapper_path, "wb") as f:
             content = await mapper_file.read()
             f.write(content)
 
         logging.info(f"Saved mapper to: {mapper_path}")
 
-        reducer_path = source_code_path / REDUCER_FILE_NAME
+        reducer_path = source_code_dir / REDUCER_FILE_NAME
         with open(reducer_path, "wb") as f:
             content = await reducer_file.read()
             f.write(content)
@@ -135,9 +136,10 @@ async def map_reduce_request(
         split_large_files(actual_input_dir)
 
         # Copy the the current versions of mapper and reducer code to the temporary directory
-        source_code_path = Path(app.shared_dir) / SOURCE_CODE_DIR
-        mapper_path = source_code_path / MAPPER_FILE_NAME
-        reducer_path = source_code_path / REDUCER_FILE_NAME
+        source_code_dir = Path(app.shared_dir) / SOURCE_CODE_DIR
+        source_code_dir.mkdir()
+        mapper_path = source_code_dir / MAPPER_FILE_NAME
+        reducer_path = source_code_dir / REDUCER_FILE_NAME
 
         temp_mapper_path = temp_dir / SOURCE_CODE_DIR / MAPPER_FILE_NAME
         temp_reducer_path = temp_dir / SOURCE_CODE_DIR / REDUCER_FILE_NAME
