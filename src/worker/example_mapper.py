@@ -2,6 +2,7 @@ import sys
 from xxhash import xxh32_intdigest
 from collections import Counter
 from pathlib import Path
+import logging
 
 
 def _get_partition_idx(word: str, num_partitions: int) -> int:
@@ -23,8 +24,8 @@ def main():
     args = sys.argv[1:]
 
     if not args or len(args) < 3:
-        print("No arguments received. Please provide some arguments.")
-        return
+        logging.error("Did not receive enough arguments")
+        sys.exit(1)
 
     input_path = Path(args[0])
     num_partitions = int(args[1])
@@ -44,4 +45,10 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.DEBUG,  # Set the logging level
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Set the log format
+        handlers=[logging.StreamHandler(sys.stdout)],  # Add a StreamHandler for stdout
+    )
+    logger = logging.getLogger()
     main()
