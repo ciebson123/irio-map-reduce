@@ -76,4 +76,32 @@ To delete your cluster and registry, run `delete_all.sh`. You will have to confi
 If the images don't want to build or don't run on GCE, try using gcloud console. 
 There might be an issue with building docker on ARM architecture.
 
+## Usage
+After successful deployment, retrieve the external IP of `upload-service` using 
+```
+kubectl get services
+```
+### Upload implementation of mapper and reducer
 
+Use the `/mapper-reducer/` endpoint.
+```
+curl -X POST "http://<external-ip>:8082/mapper-reducer/" \
+-H "Content-Type: multipart/form-data" \
+-F "mapper_file=@src/worker/example_mapper.py" \
+-F "reducer_file=@src/worker/example_reducer.py"
+
+```
+
+### Upload input file and start computation
+Send a request to the / endpoint to upload your file. Once uploaded successfully, the computation starts automatically, and the result is returned in the response.
+
+You need to provide: 
+- `file` - a ZIP file containing input data
+- `num_partitions` - number of partitions for MapReduce
+```
+curl -X 'POST' 'http://<external-ip>:8082/' \
+-H 'accept: application/octet-stream' \
+-H 'Content-Type: multipart/form-data' \
+-F 'file=@data.zip' \
+-F 'num_partitions=5' -o result.zip
+```
