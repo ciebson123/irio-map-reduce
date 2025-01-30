@@ -137,7 +137,6 @@ async def map_reduce_request(
 
         # Copy the the current versions of mapper and reducer code to the temporary directory
         source_code_dir = Path(app.shared_dir) / SOURCE_CODE_DIR
-        source_code_dir.mkdir()
         mapper_path = source_code_dir / MAPPER_FILE_NAME
         reducer_path = source_code_dir / REDUCER_FILE_NAME
 
