@@ -85,7 +85,7 @@ kubectl get services
 
 Use the `/mapper-reducer/` endpoint.
 ```
-curl -X POST "http://<external-ip>:8082/mapper-reducer/" \
+curl -X POST "http://$EXTERNAL_IP:8082/mapper-reducer/" \
 -H "Content-Type: multipart/form-data" \
 -F "mapper_file=@src/worker/example_mapper.py" \
 -F "reducer_file=@src/worker/example_reducer.py"
@@ -99,9 +99,32 @@ You need to provide:
 - `file` - a ZIP file containing input data
 - `num_partitions` - number of partitions for MapReduce
 ```
-curl -X 'POST' 'http://<external-ip>:8082/' \
+curl -X 'POST' 'http://$EXTERNAL_IP:8082/' \
 -H 'accept: application/octet-stream' \
 -H 'Content-Type: multipart/form-data' \
 -F 'file=@data.zip' \
 -F 'num_partitions=5' -o result.zip
 ```
+
+## Map/Reduce operations
+You may provide your own implementations of Map and Reduce. 
+Both should take arguments from the command line as described below. 
+
+### Map
+Arguments:
+- `input_path` (Path): Path to the input text file containing words to be counted.
+- `num_partitions` (int): Number of partitions for distributing the data.
+- `output_dir` (Path): Path to the directory where partitioned output files will be stored.
+
+Return Value:
+- The program does not return a value explicitly.
+- Instead, it creates multiple output files (one per partition) in `output_dir`.
+
+### Reduce
+Arguments:
+- `output_path` (Path): Path to the output file where the final result will be written.
+- `intermediate_paths` (list of Path): Paths to one or more input files that contain intermediate results from Map.
+
+Return Value:
+- The program does not return a value explicitly.
+- Instead, it creates a single output file (`output_path`) containing the aggregated result.
