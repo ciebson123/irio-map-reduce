@@ -47,6 +47,8 @@ COPY . .
 
 ENV PYTHONPATH "${PYTHONPATH}:/upload"
 
+RUN ./build_protos.sh
+
 # For manual testing
 RUN apt-get -y update; apt-get -y install curl; apt-get -y install unzip
 

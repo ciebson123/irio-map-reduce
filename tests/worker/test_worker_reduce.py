@@ -14,6 +14,8 @@ SPLIT_INTERMEDIATE_KVS = [
     [("key2", 4), ("key3", 7)],
 ]
 
+REDUCER_PATH = Path("src/worker/example_reducer.py").absolute()
+
 
 @pytest.fixture
 def simple_file_paths(tmp_path):
@@ -59,7 +61,7 @@ def test_process_reduce_produces_correct_output_on_simple_file(
     out_path = tmp_path / "res"
     expected_result_kval = _get_expected_result_kval(SPLIT_INTERMEDIATE_KVS)
 
-    process_reduce_task([*simple_file_paths], out_path)
+    process_reduce_task([*simple_file_paths], out_path, REDUCER_PATH)
 
     output_result_kval = _read_output_kval(out_path)
 
@@ -75,6 +77,7 @@ def test_grpc_reducer_servicer_produces_files(
     reduce_task = ReduceTask(
         partition_paths=[p.absolute().as_posix() for p in simple_file_paths],
         output_path=out_path.absolute().as_posix(),
+        reducer_path=REDUCER_PATH.as_posix(),
     )
     reducer_client.Reduce(reduce_task)
 

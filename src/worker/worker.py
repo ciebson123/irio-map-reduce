@@ -1,99 +1,73 @@
-from collections import Counter, defaultdict
 from pathlib import Path
-from typing import List, DefaultDict
+import subprocess
+from typing import List
 
 import grpc
-from xxhash import xxh32_intdigest
 
 from src.generated_files.worker_pb2 import MapResponse, ReduceResponse
 from src.generated_files.worker_pb2_grpc import WorkerServicer
 
 
-def _get_partition_idx(word: str, num_partitions: int) -> int:
-    return xxh32_intdigest(word) % num_partitions
-
-
-def _update_kval_from_file(kvals: DefaultDict[str, List[int]], path: Path) -> None:
-    with open(path, "r") as input_file:
-        for line in input_file:
-            key_val = line.strip().split()
-            kvals[key_val[0]].append(int(key_val[1]))
-
-
-def process_reduce_task(intermediate_paths: List[Path], output_path: Path) -> None:
+def process_reduce_task(
+    intermediate_paths: List[Path], output_path: Path, reducer_path: Path
+) -> None:
     """
-    Processes the reduce task. Its input is split into num_mapper files of format
+    Invokes a subprocess that performs the reduce functionality.
 
-    "word <count of occurences of word>"
+    The reducer program receives output_path and a sequence of intermediate_paths.
+    It is expected to create a single file (under output_path).
 
-    For now, it represents just a simple, predetermined word counting functionality.
-
-    It shall create a single file (under output_path) having n lines of the same format as input, but n is the number
-    of **unique** words/keys.
-
-    Simplifying assumption
-
+    Simplifying assumption:
     * inputs can fit in memory
 
     :param intermediate_paths:
     :param output_path:
+    :param reducer_path: absolute path to Python file that contains the reducer code
     :return:
     """
-    kvals = defaultdict(list)
-    for intermediate_path in intermediate_paths:
-        _update_kval_from_file(kvals, intermediate_path)
-
-    # reduce
-    result = {}
-    for key, values in kvals.items():
-        result[key] = sum(values)
-
-    # save
-    with output_path.open("w") as output_file:
-        for key, value in result.items():
-            output_file.write(f"{key} {value}\n")
+    subprocess.run(
+        [
+            "python3",
+            reducer_path.as_posix(),
+            output_path.as_posix(),
+            *[p.as_posix() for p in intermediate_paths],
+        ],
+        check=True,
+    )
 
 
 def process_map_task(
-    input_path: Path, num_partitions: int, output_dir: Path
+    input_path: Path, num_partitions: int, output_dir: Path, mapper_path: Path
 ) -> List[Path]:
     """
-    Processes the map task. Since it's output is split into num_partitions files, it
-    returns the output paths in a list of paths (in ascending order with regard to the partition num).
+    Invokes a subprocess that performs the map functionality.
 
-    Each of the num_partitions output files will have n lines of form
+    The mapper program receives three arguments: input_path, num_partitions and output_dir
+    It is expected to split its output into num_partitions files placed under output_dir directory.
 
-    "word <count of occurences of word>"
-
-    where i-th file will contain words such that xxh32_intdigest(word) % num_partitions == i
-    and n is the number of words
-
-    For now, it represents just a simple, predetermined word counting functionality.
-
-    Simplifying assumption
-
+    Simplifying assumptions:
     * a single line of the file can fit in memory
     * output dir must be empty at the start of this function
 
     :param input_path:
     :param num_partitions:
     :param output_dir:
+    :param mapper_code: path to Python file that contains the mapper code
     :return: list of paths with intermediate outputs split into num_partitions.
     """
     if num_partitions <= 0:
         raise ValueError("num_partitions must be greater than zero")
 
-    counter = Counter()
-
-    with open(input_path, "r") as input_file:
-        for line in input_file:
-            for word in line.strip().split():
-                counter[word] += 1
-
-    for word, count in counter.items():
-        partition_num = _get_partition_idx(word, num_partitions)
-        with output_dir.joinpath(str(partition_num)).open("a") as output_file:
-            output_file.write(f"{word} {count}\n")
+    subprocess.run(
+        [
+            "python3",
+            mapper_path.as_posix(),
+            input_path.as_posix(),
+            str(num_partitions),
+            output_dir.as_posix(),
+        ],
+        check=True,
+    )
 
     return [
         output_dir.joinpath(str(partition_num))
@@ -108,6 +82,7 @@ class Worker(WorkerServicer):
                 Path(map_task.file_path),
                 map_task.num_partitions,
                 Path(map_task.output_dir),
+                Path(map_task.mapper_path),
             )
             res = MapResponse(
                 partition_paths=[p.absolute().as_posix() for p in partition_paths]
@@ -115,11 +90,23 @@ class Worker(WorkerServicer):
             return res
         except ValueError as e:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(e))
+        except subprocess.CalledProcessError:
+            context.abort(
+                grpc.StatusCode.INVALID_ARGUMENT,
+                "Mapper program has exited with an error.",
+            )
 
     def Reduce(self, reduce_task, context):
-        process_reduce_task(
-            [Path(p) for p in reduce_task.partition_paths],
-            Path(reduce_task.output_path),
-        )
+        try:
+            process_reduce_task(
+                [Path(p) for p in reduce_task.partition_paths],
+                Path(reduce_task.output_path),
+                Path(reduce_task.reducer_path),
+            )
+        except subprocess.CalledProcessError:
+            context.abort(
+                grpc.StatusCode.INVALID_ARGUMENT,
+                "Reducer program has exited with an error.",
+            )
 
         return ReduceResponse()

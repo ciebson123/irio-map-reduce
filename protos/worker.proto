@@ -11,6 +11,7 @@ service Worker {
 message ReduceTask {
     repeated string partition_paths = 1;
     string output_path = 2;
+    string reducer_path = 3;
 }
 
 message ReduceResponse {}
@@ -19,6 +20,7 @@ message MapTask {
     string file_path = 1;
     int32 num_partitions = 2;
     string output_dir = 3;
+    string mapper_path = 4;
 }
 
 message MapResponse {

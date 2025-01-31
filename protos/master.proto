@@ -19,6 +19,8 @@ message MapReduceRequest {
     string input_dir = 1;
     int32 num_partitions = 2;
     optional string work_dir = 3;
+    string mapper_path = 4;
+    string reducer_path = 5;
 }
 
 message MapReduceResponse {
