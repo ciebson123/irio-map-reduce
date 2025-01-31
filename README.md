@@ -85,8 +85,7 @@ kubectl get services
 
 Use the `/mapper-reducer/` endpoint.
 ```
-curl -X POST "http://$EXTERNAL_IP:8082/mapper-reducer/" \
--H "Content-Type: multipart/form-data" \
+curl -X "POST" "http://$EXTERNAL_IP:8082/mapper-reducer/" \
 -F "mapper_file=@src/worker/example_mapper.py" \
 -F "reducer_file=@src/worker/example_reducer.py"
 
@@ -99,11 +98,9 @@ You need to provide:
 - `file` - a ZIP file containing input data
 - `num_partitions` - number of partitions for MapReduce
 ```
-curl -X 'POST' 'http://$EXTERNAL_IP:8082/' \
--H 'accept: application/octet-stream' \
--H 'Content-Type: multipart/form-data' \
--F 'file=@data.zip' \
--F 'num_partitions=5' -o result.zip
+curl -X "POST" "http://$EXTERNAL_IP:8082/" \
+-F "file=@data.zip" \
+-F "num_partitions=5" -o result.zip
 ```
 
 ## Map/Reduce operations
