@@ -143,6 +143,7 @@ async def map_reduce_request(
         temp_mapper_path = temp_dir / SOURCE_CODE_DIR / MAPPER_FILE_NAME
         temp_reducer_path = temp_dir / SOURCE_CODE_DIR / REDUCER_FILE_NAME
 
+        os.mkdir(temp_dir / SOURCE_CODE_DIR)
         shutil.copy(mapper_path, temp_mapper_path)
         shutil.copy(reducer_path, temp_reducer_path)
 
