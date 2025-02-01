@@ -18,18 +18,26 @@ from src.generated_files.master_pb2_grpc import MasterServicer
 
 
 class MasterState:
-    def __init__(self, shared_dir: Path):
-        self.shared_dir = shared_dir
-        self.reduce_out_dir = shared_dir / "reduce_output"
-        self.map_out_dir = shared_dir / "map_task"
+    def __init__(
+        self,
+        idle_workers: Queue[str],
+        worker_addresses: Tuple[set[str], Lock],
+        map_out_dir: Path,
+        reduce_out_dir: Path,
+        mapper_path: Path,
+        reducer_path: Path,
+    ):
+        self.idle_workers = idle_workers
+        self.worker_addresses = worker_addresses
 
-        self.mapper_path = ""
-        self.reducer_path = ""
+        self.reduce_out_dir = reduce_out_dir
+        self.map_out_dir = map_out_dir
+
+        self.mapper_path = mapper_path
+        self.reducer_path = reducer_path
 
         self.map_tasks_num: int | None = None
         self.reduce_tasks_num: int | None = None
-
-        self.worker_addresses: Tuple[set[str], Lock] = set(), Lock()
 
         self.completed_map_tasks: Tuple[List[Tuple[MapTask, MapResponse]], Lock] = (
             [],
@@ -37,7 +45,6 @@ class MasterState:
         )
         self.completed_reduce_tasks: Tuple[List[ReduceTask], Lock] = [], Lock()
 
-        self.idle_workers: Queue[str] = Queue(32)
         self.idle_map_tasks: Queue[MapTask] = Queue()  # output path and idx
         self.idle_reduce_tasks: Queue[ReduceTask] = Queue()  # output path and idx
 
@@ -108,12 +115,6 @@ class MasterState:
         workers, lock = self.worker_addresses
         await lock.acquire()
         workers.remove(worker)
-        lock.release()
-
-    async def add_worker(self, worker: str):
-        workers, lock = self.worker_addresses
-        await lock.acquire()
-        workers.add(worker)
         lock.release()
 
     async def _consume_map_tasks(self):
@@ -208,7 +209,9 @@ class MasterState:
 
 class Master(MasterServicer):
     def __init__(self, shared_dir: Path):
-        self.state = MasterState(shared_dir)
+        self.shared_dir = shared_dir
+        self.worker_addresses = set(), Lock()
+        self.idle_workers = Queue(128)
 
     async def RegisterService(
         self, request: RegisterServiceMes, context: grpc.aio.ServicerContext
@@ -220,8 +223,7 @@ class Master(MasterServicer):
         )
         full_worker_address = f"{request.service_address}:{request.service_port}"
         print(f"Registering worker: {full_worker_address}")
-        await self.state.add_worker(full_worker_address)
-        await self.state.idle_workers.put(full_worker_address)
+        await self._add_worker(full_worker_address)
         return Empty()
 
     async def MapReduce(
@@ -237,27 +239,41 @@ class Master(MasterServicer):
         )
 
         if request.work_dir is not None and request.work_dir != "":
-            self.state.map_out_dir = Path(request.work_dir) / "map_task"
-            self.state.reduce_out_dir = Path(request.work_dir) / "reduce_output"
+            map_out_dir = Path(request.work_dir) / "map_task"
+            reduce_out_dir = Path(request.work_dir) / "reduce_output"
         else:
-            self.state.map_out_dir = self.state.shared_dir / "map_task"
-            self.state.reduce_out_dir = self.state.shared_dir / "reduce_output"
+            map_out_dir = self.shared_dir / "map_task"
+            reduce_out_dir = self.shared_dir / "reduce_output"
 
-        self.state.mapper_path = Path(request.mapper_path)
-        self.state.reducer_path = Path(request.reducer_path)
+        mapper_path = Path(request.mapper_path)
+        reducer_path = Path(request.reducer_path)
 
-        await self.state.initialize_computation(
+        state = MasterState(
+            self.idle_workers,
+            self.worker_addresses,
+            map_out_dir,
+            reduce_out_dir,
+            mapper_path,
+            reducer_path,
+        )
+        await state.initialize_computation(
             Path(request.input_dir), request.num_partitions
         )
-        await self.state.mapreduce()
+        await state.mapreduce()
 
         logging.info(
             "Master completed MapReduce request.\nInput dir: %s, num_partitions: %d\nResults are in %s. Sending response",
             request.input_dir,
             request.num_partitions,
-            self.state.reduce_out_dir,
+            state.reduce_out_dir,
         )
 
-        return MapReduceResponse(
-            output_dir=self.state.reduce_out_dir.absolute().as_posix()
-        )
+        return MapReduceResponse(output_dir=state.reduce_out_dir.absolute().as_posix())
+
+    async def _add_worker(self, worker: str):
+        workers, lock = self.worker_addresses
+        await lock.acquire()
+        if worker not in workers:
+            workers.add(worker)
+            await self.idle_workers.put(worker)
+        lock.release()
