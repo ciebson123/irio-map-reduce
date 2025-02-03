@@ -38,6 +38,11 @@ def main():
             for word in line.strip().split():
                 counter[word] += 1
 
+    # if some partition ends up empty, we still want the file to exist
+    for partition_num in range(num_partitions):
+        with output_dir.joinpath(str(partition_num)).open("a"):
+            pass
+
     for word, count in counter.items():
         partition_num = _get_partition_idx(word, num_partitions)
         with output_dir.joinpath(str(partition_num)).open("a") as output_file:
